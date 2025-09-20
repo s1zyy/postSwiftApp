@@ -45,8 +45,8 @@ func fetchPosts(token: String) async {
     request.setValue("Bearer \(token)" , forHTTPHeaderField: "Authorization")
     
     do {
-        let (data, _) = try await URLSession.shared.data(for: request)
-        print(String(data: data, encoding: .utf8) ?? "")
+        let (_, _) = try await URLSession.shared.data(for: request)
+        
     } catch {
         print("Error fetching notes: \(error)")
     }

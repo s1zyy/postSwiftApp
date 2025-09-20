@@ -11,7 +11,7 @@ struct ContentView: View {
     
     @EnvironmentObject var appState: AppState
     @StateObject var store: PostStore = PostStore()
-    			
+    
     @State var addPost: Bool = false
     @State var postToChange: Post? = nil
     
@@ -21,15 +21,15 @@ struct ContentView: View {
     
     
     var body: some View {
-  
+        
         NavigationStack {
             List {
                 ForEach(store.posts) { post in
                     PostView(post: post,
-                    onTap: {
+                             onTap: {
                         postForChange in postToChange = postForChange
                     },
-                    onBellTap: {
+                             onBellTap: {
                         postToChangeReminder = post
                     }
                     )
@@ -67,7 +67,7 @@ struct ContentView: View {
                     var updated = post
                     updated.title = newTitle
                     updated.content = newContent
-                    Task { await store.updatePost(updated) }                    
+                    Task { await store.updatePost(updated) }
                     postToChange = nil
                 }
             }
@@ -80,13 +80,16 @@ struct ContentView: View {
                 }
             }
             .sheet(item: $postForReminder) { postForReminder in
-                    AddAlertView(post: postForReminder) { post, date in
-                        Task {await store.addReminder(post: post, date: date)}
-                        
-                        
-                    }
-                
+                AddAlertView(post: postForReminder) { post, date in
+                    Task {await store.addReminder(post: post, date: date)}
+                }
             }
+            .sheet(item: $postToChangeReminder) { postToChangeReminder in
+                UpdateAlertView(post: postToChangeReminder) { post, date in
+                    Task { await store.updateReminder(post: post, date: date)}
+                }
+            }
+            
             .navigationTitle("Posts")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -103,28 +106,26 @@ struct ContentView: View {
                         appState.token = nil
                     } label: {
                         HStack(spacing: 4) {
-                                    Image(systemName: "arrow.backward.circle.fill")
-                                        .foregroundColor(.red)
-                                    Text("Logout")
-                                        .bold()
-                                        .foregroundColor(.red)
-                                }
+                            Image(systemName: "arrow.backward.circle.fill")
+                                .foregroundColor(.red)
+                            Text("Logout")
+                                .bold()
+                                .foregroundColor(.red)
+                        }
                     }
                 }
             }
             
         }
+        
     }
-    
-    func deleteItems(at offsets: IndexSet) {
-        for offset in offsets {
-            Task { await store.deletePost(store.posts[offset]) }
+        
+        func deleteItems(at offsets: IndexSet) {
+            for offset in offsets {
+                Task { await store.deletePost(store.posts[offset]) }
+            }
         }
-    }
-}
-
-#Preview {
-    let appState = AppState.shared
-    ContentView()
-        .environmentObject(appState)
+        
+        
+    
 }

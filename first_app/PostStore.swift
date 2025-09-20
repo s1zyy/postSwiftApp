@@ -60,19 +60,10 @@ class PostStore: ObservableObject {
                 return
             }
             
-            let decoder : JSONDecoder = JSONDecoder()
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.timeZone = TimeZone(secondsFromGMT: 0)
-            decoder.dateDecodingStrategy = .formatted(formatter)
-            
+       
+            let decoder = JSONHelper.makeDecoder()
             
             let decoded = try decoder.decode([Post].self, from: data)
-            
-            
-            
             
             posts = decoded
             
@@ -122,13 +113,9 @@ class PostStore: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        let encoder = JSONEncoder()
-        let decoder = JSONDecoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        encoder.dateEncodingStrategy = .formatted(formatter)
-        decoder.dateDecodingStrategy = .formatted(formatter)
-        request.httpBody = try? encoder.encode(post)
+        let encoder = JSONHelper.makeEncoder()
+        let decoder = JSONHelper.makeDecoder()
+    
         
         print(post.reminder!)
         
@@ -161,7 +148,6 @@ class PostStore: ObservableObject {
         request.httpMethod = "DELETE"
         request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        //request.httpBody = try? JSONEncoder().encode(post)
         
         
         do {
@@ -188,18 +174,13 @@ class PostStore: ObservableObject {
         var reminder = Reminder(reminderTime: date, completed: false)
         updatedPost.reminder = reminder;
 
-        let encoder = JSONEncoder()
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss"
-        encoder.dateEncodingStrategy = .formatted(formatter)
+        let encoder = JSONHelper.makeEncoder()
         request.httpBody = try? encoder.encode(updatedPost)
         print("request was builded")
         do {
             
             let (_, _) = try await URLSession.shared.data(for: request)
-            
-            //updatedPost = try JSONDecoder().decode(Post.self, from: data)
-            
+                        
             if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
                 posts[index] = updatedPost
             }
@@ -209,6 +190,38 @@ class PostStore: ObservableObject {
         }
 
         
+    }
+    
+    @MainActor
+    func updateReminder(post: Post, date: Date) async {
+        
+        
+        let id = post.id!
+        guard let url = URL(string: "\(baseURL)/reminder/\(id)") else { return }
+        guard let token = appState.token else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
+
+        
+        var updatedPost = post;
+        updatedPost.reminder?.reminderTime = date
+        
+        let encoder = JSONHelper.makeEncoder()
+        request.httpBody = try? encoder.encode(updatedPost)
+        
+        do {
+            
+            let (_, _) = try await URLSession.shared.data(for: request)
+                        
+            if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
+                posts[index] = updatedPost
+            }
+            
+        } catch {
+            print("Error adding reminder:", error)
+        }
     }
     
     
