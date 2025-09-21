@@ -109,8 +109,9 @@ struct LoginView: View {
         isLoading = true
         errorMessage = nil
         
-        if let token = await login(username: username, password: password) {
-            appState.token = token
+        
+        do {
+            try await login(username: username, password: password)
             
             if let deviceToken = appState.deviceToken {
                 Task {
@@ -118,7 +119,7 @@ struct LoginView: View {
                 }
             }
             
-        } else {
+        } catch {
             errorMessage = "Invalid credentials"
         }
         

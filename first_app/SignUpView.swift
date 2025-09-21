@@ -13,7 +13,7 @@ struct SignUpView: View {
     
     @State var email: String = ""
     @State var password: String = ""
-    @State var error: String? = nil
+    @State var errorMessage: String? = nil
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -47,7 +47,7 @@ struct SignUpView: View {
                     .overlay(RoundedRectangle(cornerRadius: 12)
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1))
                 
-                if let errorMessage = error {
+                if let errorMessage = errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                 }
@@ -59,7 +59,7 @@ struct SignUpView: View {
                             if message == "User created successfully!" {
                                 dismiss()
                             } else {
-                                error = message
+                                errorMessage = message
                             }
                         }
                         
@@ -101,7 +101,7 @@ struct SignUpView: View {
         
     }
     func signUp(email: String, password: String) async -> String? {
-        guard let baseURL = Secrets.shared.baseUrlUni else { return nil}
+        guard let baseURL = Secrets.shared.localhost else { return nil}
         
         guard let url = URL(string: "\(baseURL)/users") else { return nil}
         

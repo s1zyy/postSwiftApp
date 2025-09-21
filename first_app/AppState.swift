@@ -13,9 +13,23 @@ import Combine
 
 class AppState: ObservableObject {
     
+    enum Screen {
+            case login, content, profile
+        }
+    
     static let shared = AppState()
-    @Published var token: String? = nil
     @Published var deviceToken: String? = nil
+    
+    @Published var currentScreen: Screen = .login
+    
+    @Published var currentUser: User? = nil
+    
+    @Published var token: String? {
+        didSet {
+            currentScreen = (token == nil) ? .login : .content
+            }
+        }
+    
     
     
     private init() {}

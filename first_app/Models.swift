@@ -28,10 +28,20 @@ class Post: Identifiable, Codable, ObservableObject{
     }
 }
 
-struct User: Equatable, Codable {
+class User: Codable {
     var email: String
     var password: String
     var id: Int64?
+    var username: String?
+    var birthDate: Date?
+    
+    init(email: String, password: String, id: Int64? = nil, username: String? = nil, birthDate: Date? = nil ) {
+        self.email = email
+        self.password = password
+        self.id = id
+        self.username = username
+        self.birthDate = birthDate
+    }
 }
 
 class Reminder: Codable, ObservableObject {
@@ -53,6 +63,8 @@ class Reminder: Codable, ObservableObject {
 struct ApiReturn: Codable {
     var message: String
 }
+
+
 
 
 

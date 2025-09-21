@@ -10,28 +10,46 @@ import Foundation
 
 struct AuthResponse: Codable {
     let token: String
+    let user: User
 }
 
 
 
-func login(username: String, password: String) async -> String? {
-    guard let baseURL = Secrets.shared.baseUrlHome else {return nil }
+
+@MainActor
+func login(username: String, password: String) async throws {
+    guard let baseURL = Secrets.shared.baseUrlHome else { return }
     
-    guard let url = URL(string: "\(baseURL)/auth/login") else { return nil }
+    guard let url = URL(string: "\(baseURL)/auth/login") else { return }
     var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     
     let body = ["username": username, "password": password]
-    request.httpBody = try? JSONEncoder().encode(body)
+    
+    let encoder = JSONHelper.makeEncoder()
+    
+    request.httpBody = try? encoder.encode(body)
+    
+    let decoder = JSONHelper.makeDecoder()
+    
+    
     
     do {
         let (data, _) = try await URLSession.shared.data(for: request)
-        let response = try JSONDecoder().decode(AuthResponse.self, from: data)
-        return response.token
+        let response = try decoder.decode(AuthResponse.self, from: data)
+        
+        if let jsonString = String(data: data, encoding: .utf8) {
+            print("Received JSON:\n\(jsonString)")
+        }
+        
+        AppState.shared.token = response.token
+        AppState.shared.currentUser = response.user
+        
+        print("Current User: \(AppState.shared.currentUser)")
+        
     } catch {
         print("Login error: \(error)")
-        return nil
     }
 }
 

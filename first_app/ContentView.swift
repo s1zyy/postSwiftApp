@@ -18,9 +18,13 @@ struct ContentView: View {
     
     @State var postForReminder: Post?
     @State var postToChangeReminder: Post?
+    @State var showMenu: Bool = false
     
+    @State private var showDeleteConfirmation: Bool = false
+    @State var postForDelete: Post? = nil
     
     var body: some View {
+        ZStack {
         
         NavigationStack {
             List {
@@ -43,9 +47,18 @@ struct ContentView: View {
                         }
                         .tint(.blue)
                     }
+                    .swipeActions(edge: .trailing) {
+                        Button {
+                            postForDelete = post
+                            showDeleteConfirmation = true
+                        } label:{
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
+                    .tint(.red)
                     
                 }
-                .onDelete(perform: deleteItems)
+                
             }
             .refreshable {
                 print ("Refreshing")
@@ -103,28 +116,60 @@ struct ContentView: View {
                 }
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
-                        appState.token = nil
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "arrow.backward.circle.fill")
-                                .foregroundColor(.red)
-                            Text("Logout")
-                                .bold()
-                                .foregroundColor(.red)
+                        withAnimation {
+                            showMenu.toggle()
                         }
+                        
+                    } label: {
+                        Image(systemName: "line.horizontal.3")
+                            .imageScale(.large)
                     }
                 }
             }
             
         }
-        
-    }
-        
-        func deleteItems(at offsets: IndexSet) {
-            for offset in offsets {
-                Task { await store.deletePost(store.posts[offset]) }
+        .confirmationDialog("Are you sure you want to delete this post?",
+                            isPresented: $showDeleteConfirmation,
+                             titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                if let post = postForDelete {
+                    Task {
+                        await store.deletePost(post)
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) {
+                postForDelete = nil
             }
         }
+            
+            if showMenu {
+                Color.black.opacity(0.3)
+                    .ignoresSafeArea()
+                    .onTapGesture {
+                        withAnimation {
+                            showMenu = false
+                        }
+                    }
+                HStack ( spacing: 0) {
+                    SideMenuView()
+                        .environmentObject(appState)
+                        .preferredColorScheme(.light)
+                        .frame(width: min(300, UIScreen.main.bounds.width * 0.7), height: UIScreen.main.bounds.height, alignment: .leading)
+                        .shadow(radius: 5)
+                        .transition(.move(edge: .leading))
+                        Spacer()
+                }
+                .transition(.move(edge: .leading))
+                .edgesIgnoringSafeArea(.all)
+                    
+            }
+            
+            
+            
+        }
+        
+    }
         
         
     

@@ -17,20 +17,24 @@ struct first_appApp: App {
     
     var body: some Scene {
         WindowGroup {
+            ZStack {
+                
+                if appState.currentScreen == .login {
+                    LoginView()
+                        .environmentObject(appState)
+                } else if appState.currentScreen == .content {
+                    ContentView()
+                        .environmentObject(appState)
+                } else if appState.currentScreen == .profile {
+                    ProfileView()
+                        .environmentObject(appState)
+                }
             
-            if let _ = appState.token{
-                ContentView()
-                    .environmentObject(appState)
-                    .preferredColorScheme(.light)
-            } else {
-                LoginView()
-                    .environmentObject(appState)
-                    .preferredColorScheme(.light)
             }
-            
-            
-            
+
+        
         }
+        
     }
     
     

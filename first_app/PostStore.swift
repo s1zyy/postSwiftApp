@@ -44,9 +44,9 @@ class PostStore: ObservableObject {
         do {
             let (data, response) = try await URLSession.shared.data(for: request)
             
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Received JSON:\n\(jsonString)")
-            }
+//            if let jsonString = String(data: data, encoding: .utf8) {
+//                print("Received JSON:\n\(jsonString)")
+//            }
             
             
             if let httpResponse = response as? HTTPURLResponse {
