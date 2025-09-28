@@ -10,7 +10,8 @@ import SwiftUI
 struct ContentView: View {
     
     @EnvironmentObject var appState: AppState
-    @StateObject var store: PostStore = PostStore()
+    @StateObject var postStore: PostStore = PostStore.shared
+    @StateObject var reminderStore: ReminderStore = ReminderStore.shared
     
     @State var addPost: Bool = false
     @State var postToChange: Post? = nil
@@ -28,7 +29,7 @@ struct ContentView: View {
         
         NavigationStack {
             List {
-                ForEach(store.posts) { post in
+                ForEach($appState.posts) { $post in
                     PostView(post: post,
                              onTap: {
                         postForChange in postToChange = postForChange
@@ -62,7 +63,7 @@ struct ContentView: View {
             }
             .refreshable {
                 print ("Refreshing")
-                await store.fetchPosts()
+                await postStore.fetchPosts()
             }
             .listStyle(PlainListStyle())
             .background(
@@ -73,14 +74,14 @@ struct ContentView: View {
                 )
                 .edgesIgnoringSafeArea(.all)
             )
-            .task { await store.fetchPosts() }
+            .task { await postStore.fetchPosts() }
             
             .sheet(item: $postToChange) { post in
                 EditPostView(post: post, title: post.title, content: post.content) { newTitle, newContent in
                     var updated = post
                     updated.title = newTitle
                     updated.content = newContent
-                    Task { await store.updatePost(updated) }
+                    Task { await postStore.updatePost(updated) }
                     postToChange = nil
                 }
             }
@@ -88,18 +89,18 @@ struct ContentView: View {
             .sheet(isPresented: $addPost) {
                 AddPostView { title, content in
                     let newPost = Post(title: title, content: content)
-                    Task { await store.addPost(newPost) }
+                    Task { await postStore.addPost(newPost) }
                     addPost = false
                 }
             }
             .sheet(item: $postForReminder) { postForReminder in
                 AddAlertView(post: postForReminder) { post, date in
-                    Task {await store.addReminder(post: post, date: date)}
+                    Task {await reminderStore.addReminder(post: post, date: date)}
                 }
             }
             .sheet(item: $postToChangeReminder) { postToChangeReminder in
                 UpdateAlertView(post: postToChangeReminder) { post, date in
-                    Task { await store.updateReminder(post: post, date: date)}
+                    Task { await reminderStore.updateReminder(post: post, date: date)}
                 }
             }
             
@@ -134,7 +135,7 @@ struct ContentView: View {
             Button("Delete", role: .destructive) {
                 if let post = postForDelete {
                     Task {
-                        await store.deletePost(post)
+                        await postStore.deletePost(post)
                     }
                 }
             }

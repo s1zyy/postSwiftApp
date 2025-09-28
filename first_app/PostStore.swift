@@ -11,12 +11,13 @@ class PostStore: ObservableObject {
     
     private let appState: AppState = AppState.shared
 
-    @Published var posts: [Post] = []
+    static let shared: PostStore = PostStore()
+    
     
     private let baseURL: String
     
     init() {
-        guard let url = Secrets.shared.baseUrlHome else {
+        guard let url = Secrets.shared.localhost else {
             fatalError("Base URL not set")
         }
         self.baseURL = url
@@ -65,7 +66,7 @@ class PostStore: ObservableObject {
             
             let decoded = try decoder.decode([Post].self, from: data)
             
-            posts = decoded
+            appState.posts = decoded
             
             
                                 
@@ -85,13 +86,19 @@ class PostStore: ObservableObject {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         
-        request.httpBody = try? JSONEncoder().encode(post)
+        let encoder = JSONHelper.makeEncoder()
+        
+        let decoder = JSONHelper.makeDecoder()
+        
+        request.httpBody = try? encoder.encode(post)
         
         do {
             let (data, _) = try await URLSession.shared.data(for: request)
-            
-            let newPost = try JSONDecoder().decode(Post.self, from: data)
-            posts.append(newPost)
+            if let bodyString = String(data: data, encoding: .utf8) {
+                print("Response body:", bodyString) 
+            }
+            let newPost = try decoder.decode(Post.self, from: data)//
+            appState.posts.append(newPost)
         
             
         } catch {
@@ -116,16 +123,16 @@ class PostStore: ObservableObject {
         let encoder = JSONHelper.makeEncoder()
         let decoder = JSONHelper.makeDecoder()
     
+        request.httpBody = try? encoder.encode(post)
         
-        print(post.reminder!)
-        
+            
         do {
             let (data , _) = try await URLSession.shared.data(for: request)
             
             let updatedPost = try decoder.decode(Post.self, from: data)
             
-            if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
-                        posts[index] = updatedPost
+            if let index = appState.posts.firstIndex(where: { $0.id == updatedPost.id }) {
+                    appState.posts[index] = updatedPost
                     }
             
             
@@ -152,77 +159,14 @@ class PostStore: ObservableObject {
         
         do {
             let (_, _) = try await URLSession.shared.data(for: request)
-            posts.removeAll { $0.id == id }
+            appState.posts.removeAll { $0.id == id }
         } catch {
             print("Error deleting post:", error)
         }
     }
     
-    @MainActor
-    func addReminder(post: Post, date: Date) async {
+        
     
-        
-        guard let url = URL(string: "\(baseURL)/reminder") else { return }
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        var updatedPost = post;
-        
-        var reminder = Reminder(reminderTime: date, completed: false)
-        updatedPost.reminder = reminder;
-
-        let encoder = JSONHelper.makeEncoder()
-        request.httpBody = try? encoder.encode(updatedPost)
-        print("request was builded")
-        do {
-            
-            let (_, _) = try await URLSession.shared.data(for: request)
-                        
-            if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
-                posts[index] = updatedPost
-            }
-            
-        } catch {
-            print("Error adding reminder:", error)
-        }
-
-        
-    }
-    
-    @MainActor
-    func updateReminder(post: Post, date: Date) async {
-        
-        
-        let id = post.id!
-        guard let url = URL(string: "\(baseURL)/reminder/\(id)") else { return }
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
-
-        
-        var updatedPost = post;
-        updatedPost.reminder?.reminderTime = date
-        
-        let encoder = JSONHelper.makeEncoder()
-        request.httpBody = try? encoder.encode(updatedPost)
-        
-        do {
-            
-            let (_, _) = try await URLSession.shared.data(for: request)
-                        
-            if let index = posts.firstIndex(where: { $0.id == updatedPost.id }) {
-                posts[index] = updatedPost
-            }
-            
-        } catch {
-            print("Error adding reminder:", error)
-        }
-    }
     
     
 }

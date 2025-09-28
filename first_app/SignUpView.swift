@@ -13,7 +13,10 @@ struct SignUpView: View {
     
     @State var email: String = ""
     @State var password: String = ""
+    @State var confirmPassword: String = ""
     @State var errorMessage: String? = nil
+    @State var showPassword: Bool = false
+    @State var showConfirmPassword: Bool = false
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -39,13 +42,77 @@ struct SignUpView: View {
                         .stroke(Color.gray.opacity(0.3), lineWidth: 1))
                     .autocapitalization(.none)
                     .disableAutocorrection(true)
-                
-                SecureField("Password", text: $password)
+                HStack{
+                    ZStack(alignment: .trailing) {
+                    
+                    if(!showPassword) {
+                        SecureField("Password", text: $password)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                    } else {
+                        TextField("Password", text: $password)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                    }
+                    
+                    Button {
+                        showPassword.toggle()
+                    } label: {
+                        Image( systemName: showPassword ? "eye.slash.fill" : "eye")
+                    }
                     .padding()
-                    .background(Color(.systemGray6))
-                    .cornerRadius(12)
-                    .overlay(RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                    
+                } //ZStack
+                   
+                                
+                } //HStack
+                
+                HStack{
+                    ZStack(alignment: .trailing) {
+                    
+                    if(!showConfirmPassword) {
+                        SecureField("Password", text: $confirmPassword)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                    } else {
+                        TextField("Password", text: $confirmPassword)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .overlay(RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
+                    }
+                    
+                    Button {
+                        showConfirmPassword.toggle()
+                    } label: {
+                        Image( systemName: showConfirmPassword ? "eye.slash.fill" : "eye")
+                    }
+                    .padding()
+                    
+                } //ZStack
+                   
+                                
+                } //HStack
+                
+
+
+               
+                
+                
                 
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
@@ -55,6 +122,10 @@ struct SignUpView: View {
                 
                 Button {
                     Task {
+                        if (password != confirmPassword) {
+                            errorMessage = "Passwords do not match"
+                            return
+                        }
                         if let message = await signUp(email: email, password: password) {
                             if message == "User created successfully!" {
                                 dismiss()
@@ -84,7 +155,7 @@ struct SignUpView: View {
                 
                 
                 
-            }
+            } //VStack
             .padding(.horizontal, 24)
             .padding(.vertical, 40)
             .background(Color.white.edgesIgnoringSafeArea(.all))
@@ -118,7 +189,7 @@ struct SignUpView: View {
             let decoded = try JSONDecoder().decode(ApiReturn.self, from: data)
             return decoded.message
         } catch {
-            return "ERROR"
+            return "Please type correct Email"
         }
         
     }

@@ -22,6 +22,8 @@ class AppState: ObservableObject {
     
     @Published var currentScreen: Screen = .login
     
+    @Published var posts: [Post] = []
+    
     @Published var currentUser: User? = nil
     
     @Published var token: String? {

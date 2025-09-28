@@ -17,8 +17,8 @@ struct AuthResponse: Codable {
 
 
 @MainActor
-func login(username: String, password: String) async throws {
-    guard let baseURL = Secrets.shared.baseUrlHome else { return }
+func login(username: String, password: String) async {
+    guard let baseURL = Secrets.shared.localhost else { return }
     
     guard let url = URL(string: "\(baseURL)/auth/login") else { return }
     var request = URLRequest(url: url)
@@ -54,7 +54,7 @@ func login(username: String, password: String) async throws {
 }
 
 func fetchPosts(token: String) async {
-    guard let baseURL = Secrets.shared.baseUrlHome else { return }
+    guard let baseURL = Secrets.shared.localhost else { return } // да но я не знаю от куда мне того юзера достать. то на беке
 
     
     guard let url = URL(string: "\(baseURL)/posts") else { return }
