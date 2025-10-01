@@ -44,24 +44,20 @@ struct SignUpView: View {
                     .disableAutocorrection(true)
                 HStack{
                     ZStack(alignment: .trailing) {
+                        
+                        
+                        
+                        Group {
+                            if(!showPassword) { SecureField("Password", text: $password)
+                            } else { TextField("Password", text: $password) }
+                        }
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    .overlay(RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 1))
                     
-                    if(!showPassword) {
-                        SecureField("Password", text: $password)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    } else {
-                        TextField("Password", text: $password)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    }
                     
                     Button {
                         showPassword.toggle()
@@ -77,24 +73,17 @@ struct SignUpView: View {
                 
                 HStack{
                     ZStack(alignment: .trailing) {
-                    
-                    if(!showConfirmPassword) {
-                        SecureField("Password", text: $confirmPassword)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    } else {
-                        TextField("Password", text: $confirmPassword)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color(.systemGray6))
-                            .cornerRadius(12)
-                            .overlay(RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1))
-                    }
+                        
+                        Group {
+                            if(!showConfirmPassword) { SecureField("Password", text: $confirmPassword)
+                            } else { TextField("Password", text: $confirmPassword) }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                        .overlay(RoundedRectangle(cornerRadius: 12)
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 1))
                     
                     Button {
                         showConfirmPassword.toggle()
@@ -108,17 +97,10 @@ struct SignUpView: View {
                                 
                 } //HStack
                 
-
-
-               
-                
-                
-                
                 if let errorMessage = errorMessage {
                     Text(errorMessage)
                         .foregroundColor(.red)
                 }
-                
                 
                 Button {
                     Task {
