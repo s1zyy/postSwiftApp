@@ -16,7 +16,6 @@ struct ProfileView: View {
     @State private var changeUsername: Bool = false
     @State private var changeBirthDate: Bool = false
     
-    @State private var changePassword: Bool = false
     
     private let userStore: UserStore = UserStore.shared
     
@@ -141,9 +140,7 @@ struct ProfileView: View {
                 
                 
             }
-            .sheet(isPresented: $changePassword){
-                ChangePasswordView()
-            }
+        
             .padding()
             .onAppear {
                 username = appState.currentUser?.username ?? ""
@@ -159,15 +156,7 @@ struct ProfileView: View {
                             .foregroundColor(.red)
                     }
                 }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        changePassword.toggle()
-                    } label: {
-                        Text("Change Password")
-                            .bold()
-                            .foregroundColor(.red)
-                    }
-                }
+            
             }
         }
     }

@@ -18,16 +18,31 @@ struct first_appApp: App {
         WindowGroup {
             ZStack {
                 
-                if appState.currentScreen == .login {
+                switch appState.currentScreen {
+                case .login:
                     LoginView()
                         .environmentObject(appState)
-                } else if appState.currentScreen == .content {
+                    
+                    
+                case .content:
                     ContentView()
                         .environmentObject(appState)
-                } else if appState.currentScreen == .profile {
+                    
+                case .profile:
                     ProfileView()
                         .environmentObject(appState)
+                    
+                case .forgotPassword:
+                    ForgotPasswordView()
+                        .environmentObject(appState)
+                    
+                case .resetPassword(let email):
+                    SetNewPasswordView(email: email)
+                        .environmentObject(appState)
                 }
+            
+                
+
             
             }
 

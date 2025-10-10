@@ -14,7 +14,7 @@ import Combine
 class AppState: ObservableObject {
     
     enum Screen {
-            case login, content, profile
+        case login, content, profile, forgotPassword, resetPassword(email: String)
         }
     
     static let shared = AppState()

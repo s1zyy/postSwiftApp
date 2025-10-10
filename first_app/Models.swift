@@ -64,8 +64,19 @@ struct ApiReturn: Codable {
     var message: String
 }
 
+struct TrueFalseResponse: Codable {
+    let check: Bool
+}
 
+struct ConfirmCodeRequest: Codable {
+    let email: String
+    let code: String
+}
 
+struct UpdatePasswordRequest: Codable {
+    let email: String
+    let password: String
+}
 
 
 

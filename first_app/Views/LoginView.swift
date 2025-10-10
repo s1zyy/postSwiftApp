@@ -18,6 +18,8 @@ struct LoginView: View {
     @State var token: String? = nil
     @State var showSignUp: Bool = false
     
+
+    
     var body: some View {
         NavigationStack {
             
@@ -87,6 +89,14 @@ struct LoginView: View {
                 }
             }
             .buttonStyle(PlainButtonStyle())
+            
+            Button {
+                appState.currentScreen = .forgotPassword
+            } label: {
+                Text("Forgot Password?")
+                    .foregroundColor(.gray)
+                    .font(.caption)
+            }
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 40)
