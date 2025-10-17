@@ -12,7 +12,7 @@ class PostStore: ObservableObject {
     private let appState: AppState = AppState.shared
 
     static let shared: PostStore = PostStore()
-    
+    private let decoder = JSONHelper.makeDecoder()
     
     private let baseURL: String
     
@@ -30,24 +30,12 @@ class PostStore: ObservableObject {
     @MainActor
     func fetchPosts() async {
 
-
-        
-        guard let url = URL(string: "\(baseURL)/posts") else { return }
-        
-        
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        if let token = appState.token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
+        let endpoint = "\(baseURL)/posts"
         
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "GET")
+
             let (data, response) = try await URLSession.shared.data(for: request)
-            
-//            if let jsonString = String(data: data, encoding: .utf8) {
-//                print("Received JSON:\n\(jsonString)")
-//            }
             
             
             if let httpResponse = response as? HTTPURLResponse {
@@ -62,13 +50,9 @@ class PostStore: ObservableObject {
             }
             
        
-            let decoder = JSONHelper.makeDecoder()
-            
             let decoded = try decoder.decode([Post].self, from: data)
             
             appState.posts = decoded
-            
-            
                                 
         } catch {
             print("Error fetching data:" , error)
@@ -77,22 +61,10 @@ class PostStore: ObservableObject {
     
     @MainActor
     func addPost(_ post: Post) async {
-        guard let url = URL(string: "\(baseURL)/posts") else { return }
-        guard let token = appState.token else {
-            print("No token found")
-            return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let encoder = JSONHelper.makeEncoder()
-        
-        let decoder = JSONHelper.makeDecoder()
-        
-        request.httpBody = try? encoder.encode(post)
-        
+        let endpoint = "\(baseURL)/posts"
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "POST", body: post)
+
             let (data, _) = try await URLSession.shared.data(for: request)
             if let bodyString = String(data: data, encoding: .utf8) {
                 print("Response body:", bodyString) 
@@ -107,26 +79,12 @@ class PostStore: ObservableObject {
     }
     @MainActor
     func updatePost(_ post: Post) async {
-        guard let id = post.id else {
-            return
-        }
-        
-
-        guard let url = URL(string: "\(baseURL)/posts/\(id)") else { return }
-        guard let token = appState.token else { return }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-        let encoder = JSONHelper.makeEncoder()
-        let decoder = JSONHelper.makeDecoder()
-    
-        request.httpBody = try? encoder.encode(post)
-        
+                
+        let endpoint = "\(baseURL)/posts/\(post.id!)"
             
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: post)
+
             let (data , _) = try await URLSession.shared.data(for: request)
             
             let updatedPost = try decoder.decode(Post.self, from: data)
@@ -134,10 +92,6 @@ class PostStore: ObservableObject {
             if let index = appState.posts.firstIndex(where: { $0.id == updatedPost.id }) {
                     appState.posts[index] = updatedPost
                     }
-            
-            
-            
-            
         } catch {
             print( "Error updating post:", error)
         }
@@ -145,29 +99,14 @@ class PostStore: ObservableObject {
     
     @MainActor
     func deletePost(_ post: Post) async {
-        
-        let id = post.id!
-        
-
-        guard let url = URL(string: "\(baseURL)/posts/\(id)") else { return }
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
+        let endpoint = "\(baseURL)/posts/\(post.id!)"
         
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "DELETE")
             let (_, _) = try await URLSession.shared.data(for: request)
-            appState.posts.removeAll { $0.id == id }
+            appState.posts.removeAll { $0.id == post.id! }
         } catch {
             print("Error deleting post:", error)
         }
     }
-    
-        
-    
-    
-    
 }
-

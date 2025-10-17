@@ -13,6 +13,8 @@ class UserStore: ObservableObject {
 
     static let shared: UserStore = UserStore()
     private let baseURL: String
+    private let encoder = JSONHelper.makeEncoder()
+    private let decoder = JSONHelper.makeDecoder()
     
     
     
@@ -24,32 +26,20 @@ class UserStore: ObservableObject {
         
     }
     
-    
     @MainActor
     func changeName(_ userName: String) async {
         
         let userId = appState.currentUser?.id ?? 0
         
-        var url = URL(string: "\(baseURL)/users/\(userId)/name")!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = appState.token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        let encoder = JSONHelper.makeEncoder()
-        
-        request.httpBody = try! encoder.encode(["username": userName])
+        let endpoint = "\(baseURL)/users/\(userId)/name"
         
         do{
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: ["username": userName])//TODO
             let (_, _) = try await URLSession.shared.data(for: request)
             appState.currentUser?.username = userName
         } catch {
             print("Error updating user name: " , error)
         }
-
-        
         
     }
     
@@ -58,17 +48,10 @@ class UserStore: ObservableObject {
         
         let userId = appState.currentUser?.id ?? 0
         
-        var url = URL(string: "\(baseURL)/users/\(userId)/birthdate")!
+        let endpoint = "\(baseURL)/users/\(userId)/birthdate"
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        if let token = appState.token {
-            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
-        }
-        let encoder = JSONHelper.makeEncoder()
-        request.httpBody = try! encoder.encode(["birthDate": birthDate])
         do{
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint,token: appState.token, method: "PUT", body: ["birthDate": birthDate])
             let (_, _) = try await URLSession.shared.data(for: request)
             appState.currentUser?.birthDate = birthDate
         } catch {
@@ -78,21 +61,13 @@ class UserStore: ObservableObject {
     
     @MainActor
     func requestPasswordReset(_ email: String) async -> Bool{ 
-        let url = URL(string: "\(baseURL)/users/reset-password/request")!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        
-        let encoder = JSONHelper.makeEncoder()
-        
-        request.httpBody = try! encoder.encode(["email": email])
+        let endpoint = "\(baseURL)/users/reset-password/request"
         
         do{
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: ["email": email])
             let (data, _) = try await URLSession.shared.data(for: request)
             
-            if let check = try? JSONDecoder().decode(TrueFalseResponse.self, from: data) {
+            if let check = try? decoder.decode(TrueFalseResponse.self, from: data) {
                 print ("Success: \(check)")
                 return check.check
             }
@@ -105,21 +80,13 @@ class UserStore: ObservableObject {
     
     @MainActor
     func sendPasswordCode(_ email: String, _ code: String) async -> Bool {
-        let url = URL(string: "\(baseURL)/users/reset-password/confirm")!
-        
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        
-        let encoder = JSONHelper.makeEncoder()
+        let endpoint = "\(baseURL)/users/reset-password/confirm"
         let confirmCodeRequest = ConfirmCodeRequest(email: email, code: code)
-        request.httpBody = try! encoder.encode(confirmCodeRequest)
-        
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: confirmCodeRequest)
             let(data, _) = try await URLSession.shared.data(for: request)
             
-            if let check = try? JSONDecoder().decode(TrueFalseResponse.self, from: data) {
+            if let check = try? decoder.decode(TrueFalseResponse.self, from: data) {
                 return check.check
             }
         } catch {
@@ -131,17 +98,12 @@ class UserStore: ObservableObject {
     
     @MainActor
     func updatePassword(_ email: String, _ password: String) async {
-        let url = URL(string: "\(baseURL)/users/reset-password/update")!
+        let endpoint = "\(baseURL)/users/reset-password/update"
         
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let encoder = JSONHelper.makeEncoder()
-        let decoder = JSONHelper.makeDecoder()
         let updatePasswordRequest = UpdatePasswordRequest(email: email, password: password)
-        request.httpBody = try! encoder.encode(updatePasswordRequest)
         
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: updatePasswordRequest)
             let(data, _) = try await URLSession.shared.data(for: request)
             
             if let authResponse = try? decoder.decode(AuthResponse.self, from: data) {

@@ -9,13 +9,8 @@ import SwiftUI
 
 class ReminderStore: ObservableObject {
     
-    
     private let appState: AppState = AppState.shared
-    
     static let shared: ReminderStore = ReminderStore()
-
-    
-    
     private let baseURL: String
     
     init() {
@@ -23,44 +18,26 @@ class ReminderStore: ObservableObject {
             fatalError("Base URL not set")
         }
         self.baseURL = url
-        
-        
     }
-
-    
     
     @MainActor
     func addReminder(post: Post, date: Date) async {
-    
-        
-        guard let url = URL(string: "\(baseURL)/reminder") else { return }
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
-        
-
-        
-        var reminder = Reminder(reminderTime: date, completed: false)
+            
+        let endpoint = "\(baseURL)/reminder"
+        let reminder = Reminder(reminderTime: date, completed: false)
         post.reminder = reminder;
 
-        let encoder = JSONHelper.makeEncoder()
-        request.httpBody = try? encoder.encode(post)
-        print("request was builded")
         do {
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "POST", body: post)
             
             let (_, _) = try await URLSession.shared.data(for: request)
                         
             if let index = appState.posts.firstIndex(where: { $0.id == post.id }) {
                 appState.posts[index] = post
             }
-            
         } catch {
             print("Error adding reminder:", error)
         }
-
-        
     }
     
     @MainActor
@@ -68,28 +45,17 @@ class ReminderStore: ObservableObject {
         
         
         let postId = post.id!
-        guard let url = URL(string: "\(baseURL)/reminder/\(postId)") else { return }
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "PUT"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
-
-        
+        let endpoint = "\(baseURL)/reminder/\(postId)"
         post.reminder?.reminderTime = date
         
-        let encoder = JSONHelper.makeEncoder()
-        
-        request.httpBody = try? encoder.encode(post)
-        
         do {
-            
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: post)
+
             let (_, _) = try await URLSession.shared.data(for: request)
                         
             if let index = appState.posts.firstIndex(where: { $0.id == postId }) {
                 appState.posts[index] = post
             }
-            
         } catch {
             print("Error adding reminder:", error)
         }
@@ -97,44 +63,21 @@ class ReminderStore: ObservableObject {
     
     @MainActor
     func deleteReminder(post: Post) async {
-        guard let postId = post.id else {
-            print("Post has no ID, cannot delete reminder")
-                    return
-        }
-        
-        guard let id = post.id else {
-            print("Post has no ID, cannot delete reminder")
-            return
-        }
-        guard let url = URL(string: "\(baseURL)/reminder/\(id)") else { return }
-        print(url)
-        guard let token = appState.token else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue( "application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue( "Bearer \(token)", forHTTPHeaderField: "Authorization")
-        let encoder = JSONHelper.makeEncoder()
-        request.httpBody = try? encoder.encode(post)
-        
-        
+        let postId = post.id!
+        let endpoint = "\(baseURL)/reminder/\(postId)"
         
         do {
-            
+            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "DELETE", body: post)
+
             let (_ , _) = try await URLSession.shared.data(for: request)
             
-           
             post.reminder = nil
-            
             
             if let index = appState.posts.firstIndex(where: { $0.id == postId }) {
                 appState.posts[index] = post
             }
-
-            
-            
         } catch {
             print("Error deleting reminder: ", error)
         }
     }
-    
 }
