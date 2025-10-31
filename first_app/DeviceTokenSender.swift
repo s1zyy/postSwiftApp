@@ -10,6 +10,7 @@ import Network
 
 class DeviceTokenSender {
     
+    private let networkHelper: NetworkHelper = NetworkHelper.shared
 
     func sendDeviceToken(deviceToken: String) async {
         guard let baseURL = Secrets.shared.localhost else { return }
@@ -18,7 +19,7 @@ class DeviceTokenSender {
         let body: [String: String] = ["deviceToken": deviceToken]
             
             do{
-                let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: AppState.shared.token, method: "POST", body: body)
+                let request = try networkHelper.makeRequest(endpoint: endpoint, token: AppState.shared.token, method: "POST", body: body)
 
                 let (_, Response) = try await URLSession.shared.data(for: request)
                 if let httpResponse = Response as? HTTPURLResponse {

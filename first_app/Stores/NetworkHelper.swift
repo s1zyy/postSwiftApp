@@ -10,9 +10,12 @@ import Foundation
 
 struct NetworkHelper {
     
-    static let encoder = JSONHelper.makeEncoder()
-    static let decoder = JSONHelper.makeDecoder()
-    static func makeRequest(endpoint: String, token: String? = nil, method: String = "POST", body: Encodable? = nil) throws -> URLRequest {
+    private let appState: AppState = AppState.shared
+    private let encoder = JSONHelper.makeEncoder()
+    private let decoder = JSONHelper.makeDecoder()
+    static let shared: NetworkHelper = NetworkHelper()
+    
+    func makeRequest(endpoint: String, token: String? = nil, method: String, body: Encodable? = nil) throws -> URLRequest {
         guard let url = URL(string: "\(endpoint)") else {
             fatalError("Invalid URL")
         }
@@ -30,4 +33,41 @@ struct NetworkHelper {
         return request
         
     }
+    
+    @MainActor
+    func decode<T: Decodable>(_ request: URLRequest) async throws -> T{
+        
+        let (data, response) = try await URLSession.shared.data(for: request)
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw URLError(.badServerResponse)
+        }
+        
+        if (200...299).contains(httpResponse.statusCode){
+            
+            if(data.isEmpty){
+                if T.self == EmptyResponse.self{
+                    return EmptyResponse() as! T
+                }
+                throw URLError(.zeroByteResource)
+            }
+            
+            
+             return try decoder.decode(T.self, from: data)
+            
+        } else {
+            if let error = try? decoder.decode(ErrorReceived.self, from: data){
+                showTemporaryErrorMessage(error.message)
+                
+            }
+            throw URLError(.badServerResponse)
+        }
+    }
+    
+    func showTemporaryErrorMessage(_ message: String) {
+        AppState.shared.errorMessage = message
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            AppState.shared.errorMessage = nil
+        }
+    }
+    
 }

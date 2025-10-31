@@ -13,8 +13,8 @@ class UserStore: ObservableObject {
 
     static let shared: UserStore = UserStore()
     private let baseURL: String
-    private let encoder = JSONHelper.makeEncoder()
-    private let decoder = JSONHelper.makeDecoder()
+    private let networkHelper: NetworkHelper = NetworkHelper.shared
+
     
     
     
@@ -34,9 +34,9 @@ class UserStore: ObservableObject {
         let endpoint = "\(baseURL)/users/\(userId)/name"
         
         do{
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: ["username": userName])//TODO
-            let (_, _) = try await URLSession.shared.data(for: request)
-            appState.currentUser?.username = userName
+            let request = try networkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: ["username": userName])
+            let newUser: User = try await networkHelper.decode(request)
+            appState.currentUser?.username = newUser.username
         } catch {
             print("Error updating user name: " , error)
         }
@@ -51,9 +51,9 @@ class UserStore: ObservableObject {
         let endpoint = "\(baseURL)/users/\(userId)/birthdate"
         
         do{
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint,token: appState.token, method: "PUT", body: ["birthDate": birthDate])
-            let (_, _) = try await URLSession.shared.data(for: request)
-            appState.currentUser?.birthDate = birthDate
+            let request = try networkHelper.makeRequest(endpoint: endpoint,token: appState.token, method: "PUT", body: ["birthDate": birthDate])
+            let newUser: User = try await networkHelper.decode(request)
+            appState.currentUser?.birthDate = newUser.birthDate
         } catch {
             print("Error updating user name: " , error)
         }
@@ -64,18 +64,14 @@ class UserStore: ObservableObject {
         let endpoint = "\(baseURL)/users/reset-password/request"
         
         do{
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: ["email": email])
-            let (data, _) = try await URLSession.shared.data(for: request)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, method: "POST", body: ["email": email])
+            let check: TrueFalseResponse = try await networkHelper.decode(request)
             
-            if let check = try? decoder.decode(TrueFalseResponse.self, from: data) {
-                print ("Success: \(check)")
-                return check.check
-            }
+            return check.check
         } catch {
             print("Error updating user name: " , error)
             return false
         }
-        return false
     }
     
     @MainActor
@@ -83,17 +79,14 @@ class UserStore: ObservableObject {
         let endpoint = "\(baseURL)/users/reset-password/confirm"
         let confirmCodeRequest = ConfirmCodeRequest(email: email, code: code)
         do {
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: confirmCodeRequest)
-            let(data, _) = try await URLSession.shared.data(for: request)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, method: "POST", body: confirmCodeRequest)
+            let check: TrueFalseResponse = try await networkHelper.decode(request)
             
-            if let check = try? decoder.decode(TrueFalseResponse.self, from: data) {
-                return check.check
-            }
+            return check.check
         } catch {
             print(error)
             return false
         }
-        return false
     }
     
     @MainActor
@@ -103,14 +96,14 @@ class UserStore: ObservableObject {
         let updatePasswordRequest = UpdatePasswordRequest(email: email, password: password)
         
         do {
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, method: "POST", body: updatePasswordRequest)
-            let(data, _) = try await URLSession.shared.data(for: request)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, method: "POST", body: updatePasswordRequest)
             
-            if let authResponse = try? decoder.decode(AuthResponse.self, from: data) {
-                appState.currentUser = authResponse.user
-                appState.token = authResponse.token
-                appState.currentScreen = .content
-            }
+            let authResponse: AuthResponse = try await networkHelper.decode(request)
+            appState.currentUser = authResponse.user
+            appState.token = authResponse.token
+            appState.currentScreen = .content
+            return
+            
         } catch {
             print(error)
         }

@@ -23,7 +23,6 @@ struct first_appApp: App {
                     LoginView()
                         .environmentObject(appState)
                     
-                    
                 case .content:
                     ContentView()
                         .environmentObject(appState)
@@ -45,8 +44,7 @@ struct first_appApp: App {
 
             
             }
-
-        
+            
         }
         
     }

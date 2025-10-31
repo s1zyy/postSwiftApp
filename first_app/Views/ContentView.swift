@@ -78,12 +78,12 @@ struct ContentView: View {
             
             .sheet(item: $postToChange) { post in
                 EditPostView(post: post, title: post.title, content: post.content) { newTitle, newContent in
-                    var updated = post
-                    updated.title = newTitle
-                    updated.content = newContent
-                    Task { await postStore.updatePost(updated) }
+                    post.title = newTitle
+                    post.content = newContent
+                    Task { await postStore.updatePost(post) }
                     postToChange = nil
                 }
+                .toast(AppState.shared.errorMessage)
             }
             
             .sheet(isPresented: $addPost) {
@@ -97,6 +97,7 @@ struct ContentView: View {
                 AddAlertView(post: postForReminder) { post, date in
                     Task {await reminderStore.addReminder(post: post, date: date)}
                 }
+                .toast(AppState.shared.errorMessage)
             }
             .sheet(item: $postToChangeReminder) { postToChangeReminder in
                 UpdateAlertView(post: postToChangeReminder) { post, date in

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct LoginView: View {
+    let authStore: AuthStore = AuthStore.shared
     
     @EnvironmentObject var appState: AppState
     
@@ -110,7 +111,9 @@ struct LoginView: View {
         }
         .sheet(isPresented: $showSignUp) {
             SignUpView()
+            .toast(appState.errorMessage)
         }
+
 
     }
     }
@@ -119,19 +122,14 @@ struct LoginView: View {
         isLoading = true
         errorMessage = nil
         
-        
-        do {
-            try await login(username: username, password: password)
+        await authStore.login(username: username, password: password)
             
-            if let deviceToken = appState.deviceToken {
-                Task {
-                    await DeviceTokenSender().sendDeviceToken(deviceToken: deviceToken)
-                }
+        if let deviceToken = appState.deviceToken {
+            Task {
+                await DeviceTokenSender().sendDeviceToken(deviceToken: deviceToken)
             }
-            
-        } catch {
-            errorMessage = "Invalid credentials"
         }
+        
         
         isLoading = false
     }

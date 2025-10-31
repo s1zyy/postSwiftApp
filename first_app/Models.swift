@@ -54,11 +54,14 @@ class Reminder: Codable, ObservableObject {
         self.reminderTime = reminderTime
         self.completed = completed
     }
-    
-    
-    
-    
 }
+
+
+struct CreateReminderRequest: Codable {
+    var reminderTime: Date
+    var postId: Int64
+}
+
 
 struct ApiReturn: Codable {
     var message: String
@@ -77,6 +80,14 @@ struct UpdatePasswordRequest: Codable {
     let email: String
     let password: String
 }
+
+
+struct ErrorReceived: Codable {
+    let status: Int
+    let message: String
+}
+
+struct EmptyResponse: Codable { }
 
 
 

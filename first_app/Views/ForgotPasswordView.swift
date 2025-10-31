@@ -184,7 +184,5 @@ public struct ForgotPasswordView: View {
                 }
             }
         }
-        
-        
     }
 }

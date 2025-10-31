@@ -11,6 +11,7 @@ class ReminderStore: ObservableObject {
     
     private let appState: AppState = AppState.shared
     static let shared: ReminderStore = ReminderStore()
+    private let networkHelper: NetworkHelper = NetworkHelper.shared
     private let baseURL: String
     
     init() {
@@ -24,17 +25,19 @@ class ReminderStore: ObservableObject {
     func addReminder(post: Post, date: Date) async {
             
         let endpoint = "\(baseURL)/reminder"
-        let reminder = Reminder(reminderTime: date, completed: false)
-        post.reminder = reminder;
-
+        guard let postId = post.id else {
+            networkHelper.showTemporaryErrorMessage("Post has no ID")
+            return
+        }
+        let newReminderRequest: CreateReminderRequest = CreateReminderRequest(reminderTime: date, postId: postId)
         do {
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "POST", body: post)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "POST", body: newReminderRequest)
             
-            let (_, _) = try await URLSession.shared.data(for: request)
-                        
-            if let index = appState.posts.firstIndex(where: { $0.id == post.id }) {
-                appState.posts[index] = post
-            }
+            let newReminder: Reminder = try await networkHelper.decode(request)
+            post.reminder = newReminder
+            updatePost(post)
+            
+
         } catch {
             print("Error adding reminder:", error)
         }
@@ -46,16 +49,16 @@ class ReminderStore: ObservableObject {
         
         let postId = post.id!
         let endpoint = "\(baseURL)/reminder/\(postId)"
-        post.reminder?.reminderTime = date
+        let reminder = post.reminder!
+        reminder.reminderTime = date
         
         do {
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: post)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "PUT", body: reminder)
+            
+            let newReminder: Reminder = try await networkHelper.decode(request)
+            post.reminder = newReminder
+            updatePost(post)
 
-            let (_, _) = try await URLSession.shared.data(for: request)
-                        
-            if let index = appState.posts.firstIndex(where: { $0.id == postId }) {
-                appState.posts[index] = post
-            }
         } catch {
             print("Error adding reminder:", error)
         }
@@ -63,21 +66,27 @@ class ReminderStore: ObservableObject {
     
     @MainActor
     func deleteReminder(post: Post) async {
-        let postId = post.id!
-        let endpoint = "\(baseURL)/reminder/\(postId)"
+        let reminder = post.reminder!
+        let reminderId = reminder.id!
+        let endpoint = "\(baseURL)/reminder/\(reminderId)"
         
         do {
-            let request = try NetworkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "DELETE", body: post)
+            let request = try networkHelper.makeRequest(endpoint: endpoint, token: appState.token, method: "DELETE")
 
-            let (_ , _) = try await URLSession.shared.data(for: request)
+            var _ : EmptyResponse = try await networkHelper.decode(request)
             
             post.reminder = nil
             
-            if let index = appState.posts.firstIndex(where: { $0.id == postId }) {
-                appState.posts[index] = post
-            }
+            updatePost(post)
+            
         } catch {
             print("Error deleting reminder: ", error)
+        }
+    }
+    
+    func updatePost(_ post: Post) {
+        if let index = appState.posts.firstIndex(where: { $0.id == post.id }) {
+            appState.posts[index] = post
         }
     }
 }

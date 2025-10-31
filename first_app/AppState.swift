@@ -32,6 +32,8 @@ class AppState: ObservableObject {
             }
         }
     
+    @Published var errorMessage: String? = nil
+    
     
     
     private init() {}
